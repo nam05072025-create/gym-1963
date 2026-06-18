@@ -2065,7 +2065,7 @@ export default function App() {
   const [zoomedCheckinQrMember, setZoomedCheckinQrMember] = useState<Member | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [profileActiveTab, setProfileActiveTab] = useState<"training" | "payment" | "renew" | "review">("training");
-  const [memberPortalSubTab, setMemberPortalSubTab] = useState<"profile" | "qr" | "history" | "payment" | "ai" | "security">("profile");
+  const [memberPortalSubTab, setMemberPortalSubTab] = useState<"profile" | "qr" | "history" | "payment" | "ai" | "security">("qr");
   const [renewFormPackage, setRenewFormPackage] = useState<string>("");
   const [renewFormPaymentMethod, setRenewFormPaymentMethod] = useState<string>("Tiền mặt");
   const [renewFormDiscount, setRenewFormDiscount] = useState<number>(0);
@@ -4448,22 +4448,32 @@ export default function App() {
 
       const responses = await Promise.all(requests);
 
-      const membersData = await responses[0].json();
-      const statsData = await responses[1].json();
-      const pkgsData = await responses[2].json();
-      const checkinsData = await responses[3].json();
-      const kpiStats = await responses[4].json();
-      const staffList = await responses[5].json();
-      const trainersData = await responses[6].json();
-      const assignmentsData = await responses[7].json();
-      const ptStatsData = await responses[8].json();
-      const staffMembersData = await responses[9].json();
-      const attendanceData = await responses[10].json();
-      const payrollData = await responses[11].json();
-      const productsData = await responses[12].json();
-      const transactionsData = await responses[13].json();
-      const memberSalesData = await responses[14].json();
-      const evaluationsData = await responses[15].json();
+      const safeJson = async (res: Response, fallback: any) => {
+        try {
+          if (!res || !res.ok) return fallback;
+          const text = await res.text();
+          return text ? JSON.parse(text) : fallback;
+        } catch {
+          return fallback;
+        }
+      };
+
+      const membersData = await safeJson(responses[0], []);
+      const statsData = await safeJson(responses[1], {});
+      const pkgsData = await safeJson(responses[2], []);
+      const checkinsData = await safeJson(responses[3], []);
+      const kpiStats = await safeJson(responses[4], []);
+      const staffList = await safeJson(responses[5], []);
+      const trainersData = await safeJson(responses[6], []);
+      const assignmentsData = await safeJson(responses[7], []);
+      const ptStatsData = await safeJson(responses[8], []);
+      const staffMembersData = await safeJson(responses[9], []);
+      const attendanceData = await safeJson(responses[10], []);
+      const payrollData = await safeJson(responses[11], []);
+      const productsData = await safeJson(responses[12], []);
+      const transactionsData = await safeJson(responses[13], []);
+      const memberSalesData = await safeJson(responses[14], []);
+      const evaluationsData = await safeJson(responses[15], []);
 
       setMembers(membersData);
 
@@ -4503,8 +4513,8 @@ export default function App() {
       setEvaluations(evaluationsData || []);
 
       if (user?.role === "MEMBER") {
-        const histRes = await responses[16].json();
-        const salesRes = await responses[17].json();
+        const histRes = await safeJson(responses[16], []);
+        const salesRes = await safeJson(responses[17], []);
         setMemberHistory(histRes);
         setMemberPaymentHistory(salesRes);
         fetchMemberEvaluations(user.id);
@@ -4512,7 +4522,7 @@ export default function App() {
 
       if (checkIsAdminLike(user) && responses[16]) {
          // If admin, responses[16] is deleted members
-        const deletedData = await responses[16].json();
+        const deletedData = await safeJson(responses[16], []);
         setDeletedMembers(deletedData);
       }
     } catch (error) {
@@ -7821,42 +7831,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Sub Tab Buttons switcher for the profile page view */}
-                <div className="grid grid-cols-3 gap-1 bg-zinc-950 p-1 rounded-xl border border-white/5 shrink-0 text-[10px] font-mono">
-                  <button
-                    type="button"
-                    onClick={() => setMobileProfileSubTab("profile")}
-                    className={`py-2 rounded-lg font-black transition-all cursor-pointer ${
-                      mobileProfileSubTab === "profile" 
-                        ? "bg-[#CCFF00] text-black shadow-sm" 
-                        : "text-zinc-400 hover:text-white"
-                    }`}
-                  >
-                    {lang === 'vi' ? "HỒ SƠ" : (lang === 'zh' ? "个人信息" : "PROFILE")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMobileProfileSubTab("payment")}
-                    className={`py-2 rounded-lg font-black transition-all cursor-pointer ${
-                      mobileProfileSubTab === "payment" 
-                        ? "bg-[#CCFF00] text-black shadow-sm" 
-                        : "text-zinc-400 hover:text-white"
-                    }`}
-                  >
-                    {lang === 'vi' ? "THANH TOÁN" : (lang === 'zh' ? "账单支付" : "PAYMENTS")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMobileProfileSubTab("security")}
-                    className={`py-2 rounded-lg font-black transition-all cursor-pointer ${
-                      mobileProfileSubTab === "security" 
-                        ? "bg-[#CCFF00] text-black shadow-sm" 
-                        : "text-zinc-400 hover:text-white"
-                    }`}
-                  >
-                    {lang === 'vi' ? "BẢO MẬT" : (lang === 'zh' ? "安全设置" : "SECURITY")}
-                  </button>
-                </div>
+
 
                 <div className="flex-1 space-y-6 text-xs transition-all duration-350 overflow-y-auto custom-scrollbar">
                   
@@ -8238,90 +8213,7 @@ export default function App() {
                                 </div>
                               </div>
 
-                              {/* Numeric Pay/Scan PIN (Premium Feature Addition) */}
-                              <div className="bg-zinc-950 border border-white/5 p-4 rounded-2xl space-y-3 text-left">
-                                <div className="flex items-center gap-2">
-                                  <KeyRound className="w-3.5 h-3.5 text-[#CCFF00]" />
-                                  <span className="block text-[8px] font-mono font-black text-zinc-400 uppercase tracking-widest">{lang === 'vi' ? "THIẾT LẬP MÃ PIN CLICK CHECK-IN" : "QUICK ACCESS SECURITY PIN (4 DIGITS)"}</span>
-                                </div>
-                                {!mobilePaymentPIN ? (
-                                  !isSettingPIN ? (
-                                    <div className="space-y-2">
-                                      <p className="text-[9px] text-zinc-500 leading-relaxed">{lang === 'vi' ? "Khi bạn kích hoạt Entry Gate từ xa trên máy di động, nhập nhanh 4 chữ số PIN để mở khoá nhanh thay vì nhập chuỗi mật khẩu dài phức tạp." : "Set a short secure 4-digit PIN for swift terminal check-ins and gates clearances."}</p>
-                                      <button
-                                        type="button"
-                                        onClick={() => setIsSettingPIN(true)}
-                                        className="bg-zinc-900 hover:bg-zinc-800 border border-white/5 py-1.5 px-3 rounded-lg text-[8px] font-black text-[#CCFF00] uppercase tracking-wider cursor-pointer transition-colors"
-                                      >
-                                        {lang === 'vi' ? "KÍCH HOẠT THIẾT LẬP PIN +" : "ACTIVATE PIN SETUP +"}
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <div className="space-y-2.5">
-                                      <input
-                                        type="password"
-                                        maxLength={4}
-                                        placeholder="••••"
-                                        value={pinInputValue}
-                                        onChange={(e) => {
-                                          const val = e.target.value.replace(/[^0-9]/g, "");
-                                          setPinInputValue(val);
-                                        }}
-                                        className="w-full bg-black border border-[#CCFF00]/20 text-[#CCFF00] text-center font-mono text-xl tracking-widest py-1.5 rounded-xl outline-none"
-                                      />
-                                      <div className="flex gap-2">
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            if (pinInputValue.length === 4) {
-                                              setMobilePaymentPIN(pinInputValue);
-                                              setIsSettingPIN(false);
-                                              setPinInputValue("");
-                                              addNotification(lang === 'vi' ? "Mật mã PIN đã được kích hoạt thành công!" : "Access PIN ID configured!", "success");
-                                              setMobileAccessLogs(prev => [
-                                                { id: Date.now(), action: "Bật Mã PIN", device: "Simulated App", ip: "127.0.0.1", time: "Vừa xong", status: "Thành công" },
-                                                ...prev
-                                              ]);
-                                            } else {
-                                              addNotification(lang === 'vi' ? "PIN phải đủ 4 chữ số!" : "PIN must be exactly 4 digits!", "error");
-                                            }
-                                          }}
-                                          className="flex-1 bg-[#CCFF00] hover:bg-white text-black font-black py-1.5 rounded-lg text-[8px] uppercase tracking-widest cursor-pointer"
-                                        >
-                                          {lang === 'vi' ? "LƯU TRỮ PIN" : "SAVE PIN ID"}
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            setIsSettingPIN(false);
-                                            setPinInputValue("");
-                                          }}
-                                          className="px-3 bg-zinc-900 border border-white/5 text-zinc-400 hover:text-white rounded-lg text-[8px] font-bold uppercase cursor-pointer"
-                                        >
-                                          {lang === 'vi' ? "HỦY" : "CANCEL"}
-                                        </button>
-                                      </div>
-                                    </div>
-                                  )
-                                ) : (
-                                  <div className="flex justify-between items-center bg-black/40 p-3 rounded-xl border border-white/5">
-                                    <div className="space-y-0.5 text-left">
-                                      <span className="text-[10px] font-bold text-white block">● ● ● ● (MÃ PIN ACTIVE)</span>
-                                      <span className="text-[7.5px] font-mono text-zinc-500 uppercase block">{lang === 'vi' ? "Dùng thay mật khẩu khi quét cổng" : "Used to approve entries in place of master keys"}</span>
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setMobilePaymentPIN("");
-                                        addNotification(lang === 'vi' ? "Đã xoá bảo mật PIN." : "PIN security removed.", "info");
-                                      }}
-                                      className="text-[8px] font-black uppercase text-red-500 hover:underline cursor-pointer bg-transparent border-none outline-none"
-                                    >
-                                      {lang === 'vi' ? "XÓA PIN" : "REMOVE PIN"}
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
+
 
 
                           {/* ĐỔI MẬT KHẨU TÀI KHOẢN (Change Password) */}
@@ -8500,18 +8392,7 @@ export default function App() {
                             )}
                           </div>
 
-                          {/* Member Portal Logout Button */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsMobilePersonalSheetOpen(false);
-                              handleLogout();
-                            }}
-                            className="w-full bg-red-500/15 hover:bg-red-500 hover:text-white border border-red-500/25 text-red-500 font-black py-3 rounded-2xl text-[10px] uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-lg mt-3"
-                          >
-                            <LogOut className="w-3.5 h-3.5 shrink-0" />
-                            {lang === 'vi' ? "ĐĂNG XUẤT CỔNG HỘI VIÊN" : (lang === 'zh' ? "登出会员个人中心" : "LOG OUT PORTAL")}
-                          </button>
+
                         </>
                       )}
                     </div>
@@ -10008,37 +9889,81 @@ export default function App() {
       {/* Mobile Bottom Navigation - Distinctive Float Style */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 p-6 z-[90] pointer-events-none">
         <nav className="w-full h-16 bg-black/80 backdrop-blur-3xl border border-white/10 rounded-[2rem] flex items-center justify-around px-4 shadow-2xl pointer-events-auto relative overflow-hidden">
-           <button 
-            onClick={() => setActiveTab(user.role === "MEMBER" ? "memberPortal" : "dashboard")}
-            className={`flex flex-col items-center gap-1 transition-all ${activeTab === "dashboard" || activeTab === "memberPortal" ? 'text-[#CCFF00] scale-110' : 'text-zinc-600'}`}
-           >
-             <LayoutDashboard className="w-5 h-5" />
-             <span className="text-[7px] font-black uppercase tracking-widest">HOME</span>
-           </button>
+          {user.role === "MEMBER" ? (
+            <>
+              <button 
+                onClick={() => {
+                  setActiveTab("memberPortal");
+                  setMemberPortalSubTab("qr");
+                }}
+                className={`flex flex-col items-center gap-1 transition-all ${activeTab === "memberPortal" && memberPortalSubTab === "qr" ? 'text-[#CCFF00] scale-110' : 'text-zinc-600'}`}
+              >
+                <LayoutDashboard className="w-5 h-5" />
+                <span className="text-[7px] font-black uppercase tracking-widest">TRANG CHỦ</span>
+              </button>
 
-           <button 
-            onClick={() => setActiveTab("packages")}
-            className={`flex flex-col items-center gap-1 transition-all ${activeTab === "packages" ? 'text-[#CCFF00] scale-110' : 'text-zinc-600'}`}
-           >
-             <CreditCard className="w-5 h-5" />
-             <span className="text-[7px] font-black uppercase tracking-widest">GÓI TẬP</span>
-           </button>
+              <button 
+                onClick={() => setActiveTab("packages")}
+                className={`flex flex-col items-center gap-1 transition-all ${activeTab === "packages" ? 'text-[#CCFF00] scale-110' : 'text-zinc-600'}`}
+              >
+                <CreditCard className="w-5 h-5" />
+                <span className="text-[7px] font-black uppercase tracking-widest">GÓI TẬP</span>
+              </button>
 
-           <button 
-            onClick={() => setActiveTab(user.role === "MEMBER" ? "memberPortal" : "members")}
-            className={`flex flex-col items-center gap-1 transition-all ${activeTab === "members" ? 'text-[#CCFF00] scale-110' : 'text-zinc-600'}`}
-           >
-             <Users className="w-5 h-5" />
-             <span className="text-[7px] font-black uppercase tracking-widest">{user.role === "MEMBER" ? "HỒ SƠ" : "HỘI VIÊN"}</span>
-           </button>
+              <button 
+                onClick={() => {
+                  setActiveTab("memberPortal");
+                  setMemberPortalSubTab("ai");
+                }}
+                className={`flex flex-col items-center gap-1 transition-all ${activeTab === "memberPortal" && memberPortalSubTab === "ai" ? 'text-[#CCFF00] scale-110' : 'text-zinc-600'}`}
+              >
+                <Sparkles className="w-5 h-5" />
+                <span className="text-[7px] font-black uppercase tracking-widest">TRỢ LÝ AI</span>
+              </button>
 
-           <button 
-            onClick={() => setIsSidebarOpen(true)}
-            className="flex flex-col items-center gap-1 text-zinc-600 active:text-white"
-           >
-             <Menu className="w-5 h-5" />
-             <span className="text-[7px] font-black uppercase tracking-widest">MENU</span>
-           </button>
+              <button 
+                onClick={() => setActiveTab("communication")}
+                className={`flex flex-col items-center gap-1 transition-all ${activeTab === "communication" ? 'text-[#CCFF00] scale-110' : 'text-zinc-600'}`}
+              >
+                <MessageCircle className="w-5 h-5" />
+                <span className="text-[7px] font-black uppercase tracking-widest">HỖ TRỢ</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button 
+                onClick={() => setActiveTab("dashboard")}
+                className={`flex flex-col items-center gap-1 transition-all ${activeTab === "dashboard" ? 'text-[#CCFF00] scale-110' : 'text-zinc-600'}`}
+              >
+                <LayoutDashboard className="w-5 h-5" />
+                <span className="text-[7px] font-black uppercase tracking-widest">HOME</span>
+              </button>
+
+              <button 
+                onClick={() => setActiveTab("packages")}
+                className={`flex flex-col items-center gap-1 transition-all ${activeTab === "packages" ? 'text-[#CCFF00] scale-110' : 'text-zinc-600'}`}
+              >
+                <CreditCard className="w-5 h-5" />
+                <span className="text-[7px] font-black uppercase tracking-widest">GÓI TẬP</span>
+              </button>
+
+              <button 
+                onClick={() => setActiveTab("members")}
+                className={`flex flex-col items-center gap-1 transition-all ${activeTab === "members" ? 'text-[#CCFF00] scale-110' : 'text-zinc-600'}`}
+              >
+                <Users className="w-5 h-5" />
+                <span className="text-[7px] font-black uppercase tracking-widest">HỘI VIÊN</span>
+              </button>
+
+              <button 
+                onClick={() => setIsSidebarOpen(true)}
+                className="flex flex-col items-center gap-1 text-zinc-600 active:text-white"
+              >
+                <Menu className="w-5 h-5" />
+                <span className="text-[7px] font-black uppercase tracking-widest">MENU</span>
+              </button>
+            </>
+          )}
         </nav>
       </div>
 
@@ -10876,12 +10801,10 @@ export default function App() {
               <div className="sticky top-0 z-40 bg-zinc-950/95 backdrop-blur-md pt-4 pb-2 border-b border-white/5 -mx-4 px-4 md:mx-0 md:px-0 font-sans">
                 <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
                   {[
-                    { id: "profile", label: 'HỒ SƠ', icon: 'UserIcon' },
                     { id: "qr", label: 'MÃ QR', icon: 'QrCode' },
                     { id: "history", label: 'TẬP LUYỆN', icon: 'Dumbbell' },
                     { id: "payment", label: 'BIÊN LAI', icon: 'Wallet' },
                     { id: "ai", label: 'AI COACH', icon: 'Sparkles' },
-                    { id: "security", label: 'BẢO MẬT', icon: 'Lock' },
                   ].map((tab) => {
                     let Icon;
                     if (tab.icon === 'UserIcon') Icon = UserIcon;
@@ -17407,40 +17330,82 @@ export default function App() {
       {/* Bottom Navigation Bar (Mobile Only) */}
       <nav className={`fixed bottom-0 left-0 right-0 z-[110] px-4 pb-4 pt-2 pointer-events-none md:hidden transition-all duration-300 ${activeTab === "staff" || activeTab === "members" || activeTab === "pt" ? "bg-transparent backdrop-blur-none" : "bg-gradient-to-t from-zinc-950 via-zinc-950/90 to-transparent backdrop-blur-sm"}`}>
         <div className="bg-zinc-900/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-1.5 flex items-center justify-around shadow-[0_-10px_40px_rgba(0,0,0,0.8)] pointer-events-auto max-w-sm mx-auto">
-          {[
-            { id: "dashboard", label: t('dashboard'), icon: LayoutDashboard },
-            { id: "members", label: t('members'), icon: Users },
-            { id: "packages", label: t('packages'), icon: CreditCard },
-            { id: "finance", label: t('finance'), icon: BarChart3, role: "ADMIN" },
-          ].filter(i => !i.role || i.role === user.role).map((item) => {
-            const IsActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id as any)}
-                className={`relative flex flex-col items-center justify-center w-[60px] h-[60px] rounded-[1.6rem] transition-all duration-300 ${
-                  IsActive ? 'text-[#CCFF00]' : 'text-zinc-500 hover:text-white'
-                }`}
-              >
-                {IsActive && (
-                  <motion.div 
-                    layoutId="activeTabMobile"
-                    className="absolute inset-0 bg-[#CCFF00] rounded-[1.6rem] shadow-[0_4px_12px_rgba(204,255,0,0.3)]"
-                    transition={{ type: "spring", bounce: 0.1, duration: 0.5 }}
-                  />
-                )}
-                <div className={`relative z-10 transition-all duration-300 ${IsActive ? 'scale-105 text-black -translate-y-0.5' : 'scale-100'}`}>
-                  <item.icon className={`${IsActive ? 'w-5 h-5' : 'w-4.5 h-4.5'} mb-0.5 transition-all`} />
-                </div>
-                <span className={`text-[8.5px] font-black uppercase tracking-tighter relative z-10 transition-all duration-300 ${IsActive ? 'text-black translate-y-0.5' : 'opacity-60 translate-y-0'}`}>
-                  {item.label}
-                </span>
-                {IsActive && (
-                   <div className="absolute -bottom-1.5 w-1 h-1 bg-[#CCFF00] rounded-full blur-[1px] opacity-50" />
-                )}
-              </button>
-            );
-          })}
+          {user.role === "MEMBER" ? (
+            [
+              { id: "memberPortal", subTab: "qr", label: "Trang chủ", icon: LayoutDashboard },
+              { id: "packages", label: "Gói tập", icon: CreditCard },
+              { id: "memberPortal", subTab: "ai", label: "Trợ lý AI", icon: Sparkles },
+              { id: "communication", label: "Hỗ trợ", icon: MessageCircle },
+            ].map((item) => {
+              const IsActive = activeTab === item.id && (item.id !== "memberPortal" || memberPortalSubTab === item.subTab);
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => {
+                    setActiveTab(item.id as any);
+                    if (item.subTab) {
+                      setMemberPortalSubTab(item.subTab as any);
+                    }
+                  }}
+                  className={`relative flex flex-col items-center justify-center w-[60px] h-[60px] rounded-[1.6rem] transition-all duration-300 ${
+                    IsActive ? 'text-[#CCFF00]' : 'text-zinc-500 hover:text-white'
+                  }`}
+                >
+                  {IsActive && (
+                    <motion.div 
+                      layoutId="activeTabMobile"
+                      className="absolute inset-0 bg-[#CCFF00] rounded-[1.6rem] shadow-[0_4px_12px_rgba(204,255,0,0.3)]"
+                      transition={{ type: "spring", bounce: 0.1, duration: 0.5 }}
+                    />
+                  )}
+                  <div className={`relative z-10 transition-all duration-300 ${IsActive ? 'scale-105 text-black -translate-y-0.5' : 'scale-100'}`}>
+                    <item.icon className={`${IsActive ? 'w-5 h-5' : 'w-4.5 h-4.5'} mb-0.5 transition-all`} />
+                  </div>
+                  <span className={`text-[8.5px] font-black uppercase tracking-tighter relative z-10 transition-all duration-300 ${IsActive ? 'text-black translate-y-0.5' : 'opacity-60 translate-y-0'}`}>
+                    {item.label}
+                  </span>
+                  {IsActive && (
+                     <div className="absolute -bottom-1.5 w-1 h-1 bg-[#CCFF00] rounded-full blur-[1px] opacity-50" />
+                  )}
+                </button>
+              );
+            })
+          ) : (
+            [
+              { id: "dashboard", label: t('dashboard'), icon: LayoutDashboard },
+              { id: "members", label: t('members'), icon: Users },
+              { id: "packages", label: t('packages'), icon: CreditCard },
+              { id: "finance", label: t('finance'), icon: BarChart3, role: "ADMIN" },
+            ].filter(i => (!i.role || i.role === user.role) && !(i.id === "members" && user.role === "MEMBER")).map((item) => {
+              const IsActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id as any)}
+                  className={`relative flex flex-col items-center justify-center w-[60px] h-[60px] rounded-[1.6rem] transition-all duration-300 ${
+                    IsActive ? 'text-[#CCFF00]' : 'text-zinc-500 hover:text-white'
+                  }`}
+                >
+                  {IsActive && (
+                    <motion.div 
+                      layoutId="activeTabMobile"
+                      className="absolute inset-0 bg-[#CCFF00] rounded-[1.6rem] shadow-[0_4px_12px_rgba(204,255,0,0.3)]"
+                      transition={{ type: "spring", bounce: 0.1, duration: 0.5 }}
+                    />
+                  )}
+                  <div className={`relative z-10 transition-all duration-300 ${IsActive ? 'scale-105 text-black -translate-y-0.5' : 'scale-100'}`}>
+                    <item.icon className={`${IsActive ? 'w-5 h-5' : 'w-4.5 h-4.5'} mb-0.5 transition-all`} />
+                  </div>
+                  <span className={`text-[8.5px] font-black uppercase tracking-tighter relative z-10 transition-all duration-300 ${IsActive ? 'text-black translate-y-0.5' : 'opacity-60 translate-y-0'}`}>
+                    {item.label}
+                  </span>
+                  {IsActive && (
+                     <div className="absolute -bottom-1.5 w-1 h-1 bg-[#CCFF00] rounded-full blur-[1px] opacity-50" />
+                  )}
+                </button>
+              );
+            })
+          )}
         </div>
       </nav>
 

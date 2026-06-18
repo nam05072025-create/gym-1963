@@ -636,7 +636,7 @@ export default function CommunicationPanel({
             </div>
 
             {/* Chat Input Bar */}
-            <div className="p-4 border-t border-white/5 bg-zinc-950/40 shrink-0">
+            <div className="p-4 pb-[100px] md:pb-4 border-t border-white/5 bg-zinc-950/40 shrink-0">
               <form 
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -923,7 +923,7 @@ export default function CommunicationPanel({
                 </div>
 
                 {/* Active Chat Input field */}
-                <div className="p-4 border-t border-white/5 bg-zinc-950/40 shrink-0">
+                <div className="p-4 pb-[100px] md:pb-4 border-t border-white/5 bg-zinc-950/40 shrink-0">
                   <form 
                     onSubmit={(e) => {
                       e.preventDefault();
