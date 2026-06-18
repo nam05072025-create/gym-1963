@@ -12588,30 +12588,45 @@ export default function App() {
               </div>
 
               {/* Segment Filters */}
-              <div className="flex items-center gap-1.5 p-1 bg-zinc-950/80 border border-white/10 rounded-2xl overflow-x-auto custom-scrollbar shrink-0">
-                {[
-                  { id: "ALL", label: lang === 'vi' ? "Tất cả hội viên" : lang === 'zh' ? "全部会员" : "All members", count: members.length },
-                  { id: "ACTIVE", label: lang === 'vi' ? "Hoạt động" : lang === 'zh' ? "活跃中" : "Active", count: members.filter(m => m.status === 'Hoạt động').length },
-                  { id: "EXPIRED", label: lang === 'vi' ? "Đã hết hạn" : lang === 'zh' ? "已过期" : "Expired", count: members.filter(m => m.status !== 'Hoạt động').length }
-                ].map((tier) => (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+                <div className="flex items-center gap-1.5 p-1 bg-zinc-950/80 border border-white/10 rounded-2xl overflow-x-auto custom-scrollbar">
+                  {[
+                    { id: "ALL", label: lang === 'vi' ? "Tất cả hội viên" : lang === 'zh' ? "全部会员" : "All members", count: members.length },
+                    { id: "ACTIVE", label: lang === 'vi' ? "Hoạt động" : lang === 'zh' ? "活跃中" : "Active", count: members.filter(m => m.status === 'Hoạt động').length },
+                    { id: "EXPIRED", label: lang === 'vi' ? "Đã hết hạn" : lang === 'zh' ? "已过期" : "Expired", count: members.filter(m => m.status !== 'Hoạt động').length }
+                  ].map((tier) => (
+                    <button
+                      key={tier.id}
+                      onClick={() => setMemberStatusFilter(tier.id)}
+                      className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 flex items-center gap-2 whitespace-nowrap active:scale-95 ${
+                        memberStatusFilter === tier.id
+                          ? "bg-[#CCFF00] text-black shadow-[0_4px_20px_rgba(204,255,0,0.25)]"
+                          : "text-zinc-400 hover:text-white hover:bg-white/5"
+                      }`}
+                    >
+                      {memberStatusFilter === tier.id && <span className="w-1.5 h-1.5 rounded-full bg-black animate-ping" />}
+                      <span>{tier.label}</span>
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-black ${
+                        memberStatusFilter === tier.id ? "bg-black/10 text-black" : "bg-white/5 text-zinc-500"
+                      }`}>
+                        {tier.count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {checkIsAdminLike(user) && (
                   <button
-                    key={tier.id}
-                    onClick={() => setMemberStatusFilter(tier.id)}
-                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 flex items-center gap-2 whitespace-nowrap active:scale-95 ${
-                      memberStatusFilter === tier.id
-                        ? "bg-[#CCFF00] text-black shadow-[0_4px_20px_rgba(204,255,0,0.25)]"
-                        : "text-zinc-400 hover:text-white hover:bg-white/5"
-                    }`}
+                    onClick={() => setIsDeletedModalOpen(true)}
+                    className="px-4 py-2 bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 flex items-center gap-2 whitespace-nowrap active:scale-95 self-start sm:self-auto cursor-pointer"
                   >
-                    {memberStatusFilter === tier.id && <span className="w-1.5 h-1.5 rounded-full bg-black animate-ping" />}
-                    <span>{tier.label}</span>
-                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-black ${
-                      memberStatusFilter === tier.id ? "bg-black/10 text-black" : "bg-white/5 text-zinc-500"
-                    }`}>
-                      {tier.count}
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{lang === 'vi' ? "Thùng rác hội viên" : (lang === 'zh' ? "会员回收站" : "Member Trash Bin")}</span>
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-black bg-rose-500/20 text-rose-500">
+                      {deletedMembers.length}
                     </span>
                   </button>
-                ))}
+                )}
               </div>
 
               {/* Member Extended Data Cards Board (Unified Row layout like Staff) */}
@@ -13127,7 +13142,7 @@ export default function App() {
                                   >
                                     <Settings className="w-2.5 h-2.5" /> <span className="lg:hidden">{lang === 'vi' ? "Gia hạn" : lang === 'zh' ? "续费" : "Renew"}</span>
                                   </button>
-                                  {user?.role === "ADMIN" && (
+                                  {(checkIsAdminLike(user) || user?.role === "STAFF" || user?.role === "RECEPTIONIST") && (
                                     <button 
                                       onClick={(e) => {
                                         e.stopPropagation();
