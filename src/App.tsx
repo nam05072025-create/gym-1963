@@ -13054,17 +13054,6 @@ export default function App() {
                                   >
                                     <Edit2 className="w-2.5 h-2.5 text-[#CCFF00]" /> <span className="lg:hidden">{lang === 'vi' ? "Sửa" : lang === 'zh' ? "编辑" : "Edit"}</span>
                                   </button>
-                                  <button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setRenewingMember(member);
-                                      setIsRenewSelectModalOpen(true);
-                                    }}
-                                    className="flex-1 lg:flex-none p-1.5 bg-[#CCFF00]/10 text-[#CCFF00] hover:bg-[#CCFF00] hover:text-black rounded border border-[#CCFF00]/20 transition-all active:scale-90 flex items-center justify-center gap-1 text-[8.5px] font-bold uppercase tracking-wider min-w-[55px]"
-                                    title={lang === 'vi' ? "Gia hạn gói tập" : lang === 'zh' ? "续期卡包" : "Renew Package"}
-                                  >
-                                    <Settings className="w-2.5 h-2.5" /> <span className="lg:hidden">{lang === 'vi' ? "Gia hạn" : lang === 'zh' ? "续费" : "Renew"}</span>
-                                  </button>
                                   {(checkIsAdminLike(user) || user?.role === "STAFF" || user?.role === "RECEPTIONIST") && (
                                     <button 
                                       onClick={(e) => {
